@@ -2,7 +2,8 @@ import omni.ui as ui
 from pxr import Usd, UsdGeom, UsdShade, Sdf
 import omni.usd
 import carb
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List
+from collections import defaultdict
 from . import csv_bridge
 
 # ------------------------------------------------------------------------------
@@ -236,20 +237,17 @@ def set_filter_state(label: str, active: bool) -> None:
 # UI Construction
 # ------------------------------------------------------------------------------
 
-def _section_label(text: str) -> None:
-    """Creates a styled section header label."""
-    ui.Label(
-        text,
-        style={
-            "font_size": 18,
-            "color": 0xFF000000,
-            "margin": 0,
-        },
-    )
-
-
 def _checkbox(label: str, default: bool = False) -> ui.SimpleBoolModel:
-    """Creates a checkbox with a label and returns its model."""
+    """
+    Creates a checkbox with a label and returns its model.
+    
+    Args:
+        label: The text label for the checkbox.
+        default: Initial state.
+        
+    Returns:
+        ui.SimpleBoolModel: The model controlling the checkbox state.
+    """
     model = ui.SimpleBoolModel(default)
     _FILTER_MODELS[label] = model  # Register model
     
@@ -260,24 +258,22 @@ def _checkbox(label: str, default: bool = False) -> ui.SimpleBoolModel:
     return model
 
 
-def _group_box(title: str, build_content_fn: callable) -> None:
-    """Creates a visual group box with a title and content."""
-    with ui.VStack(spacing=4, height=0):
-        _section_label(title)
-        # subtle separator
-        ui.Line()
-        with ui.VStack(spacing=4, height=0, style={"margin": 4}):
-            build_content_fn()
-        ui.Spacer(height=8)
-
-
 def build_panel() -> None:
     """
     Builds the main content of the Filter tab.
+    
+    Dynamically generates collapsible groups and checkboxes based on the 
+    data loaded in `csv_bridge`.
     """
     # Clear old models when rebuilding UI to avoid leaks or stale references
     _FILTER_MODELS.clear()
     
+    # Get all data and group by category
+    all_info = csv_bridge.get_all_prim_info()
+    grouped_info = defaultdict(list)
+    for info in all_info:
+        grouped_info[info.category].append(info)
+
     # Wrap everything in a nice padded column
     with ui.VStack(spacing=10, height=0, style={"margin": 10}):
         # Header
@@ -291,31 +287,16 @@ def build_panel() -> None:
         )
         ui.Spacer(height=6)
 
-        # --- Group 1: Shop Floor Sectors ------------------------------------
-        def _build_sector_group():
-            with ui.VStack(spacing=4, height=0):
-                with ui.HStack(spacing=4, height=0):
-                    _checkbox("Bosch Rexroth", default=False)
-                with ui.HStack(spacing=4, height=0):
-                    _checkbox("Factory of the Future", default=False)
-                with ui.HStack(spacing=4, height=0):
-                    _checkbox("Automobil", default=False)
+        # Iterate over categories and create collapsible frames
+        for category, items in grouped_info.items():
+            with ui.CollapsableFrame(title=category, collapsed=False):
+                with ui.VStack(spacing=4, height=0, style={"margin": 4}):
+                    for item in items:
+                        with ui.HStack(spacing=4, height=0):
+                            _checkbox(item.name, default=False)
+            
+            ui.Spacer(height=4)
 
-        _group_box("Shop Floor Sectors", _build_sector_group)
-
-        # --- Group 2: Classification -------------------------------------------------
-        def _build_size_group():
-            with ui.VStack(spacing=4, height=0):
-                with ui.HStack(spacing=4, height=0):
-                    _checkbox("Start-up", default=False)
-                with ui.HStack(spacing=4, height=0):
-                    _checkbox("Konzern", default=False)
-                with ui.HStack(spacing=4, height=0):
-                    _checkbox("Mittelstand", default=False)
-
-        _group_box("Classification", _build_size_group)
-
-        ui.Spacer(height=4)
         ui.Line()
         ui.Spacer(height=4)
 

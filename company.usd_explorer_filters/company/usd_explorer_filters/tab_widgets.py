@@ -61,6 +61,9 @@ class BaseTab:
 class TabGroup:
     """
     A custom widget that manages a set of tabs and their content areas.
+    
+    It renders a header row with clickable tabs and switches the visible content
+    area based on the selection.
     """
     def __init__(self, tabs: List[BaseTab]):
         if not tabs:
@@ -105,6 +108,9 @@ class TabGroup:
     def select_tab(self, index: int) -> None:
         """
         Switches the visible content to the tab at the given index.
+        
+        Args:
+            index: The index of the tab to select.
         """
         for i in range(len(self.tabs)):
             if i == index:

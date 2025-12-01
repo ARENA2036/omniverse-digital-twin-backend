@@ -1,11 +1,16 @@
 import os
 import csv
 import carb
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from collections import namedtuple
 
+# ------------------------------------------------------------------------------
+# Data Structures
+# ------------------------------------------------------------------------------
+
 # Define the structure for prim information
-PrimInfo = namedtuple("PrimInfo", ["name", "prim_path", "type", "contact"])
+# Added 'category' to support dynamic UI grouping
+PrimInfo = namedtuple("PrimInfo", ["name", "prim_path", "category", "type", "contact"])
 
 # Global dictionary: "Bosch Rexroth" -> PrimInfo(...)
 _PRIM_INFO_BY_NAME: Dict[str, PrimInfo] = {}
@@ -13,8 +18,10 @@ _PRIM_INFO_BY_NAME: Dict[str, PrimInfo] = {}
 
 def _get_csv_path() -> str:
     """
-    Returns the absolute path to the 'prim_info.csv' file, expected to be
-    located in the same directory as this module.
+    Returns the absolute path to the 'prim_info.csv' file.
+    
+    Returns:
+        str: The absolute file path.
     """
     here = os.path.dirname(__file__)
     return os.path.join(here, "prim_info.csv")
@@ -47,6 +54,7 @@ def reload_csv() -> None:
             for row_idx, row in enumerate(reader, start=2): # Start at 2 for line number (header is 1)
                 name = (row.get("name") or "").strip()
                 prim_path = (row.get("path") or "").strip()
+                category = (row.get("category") or "Uncategorized").strip()
                 type_ = (row.get("type") or "").strip()
                 contact = (row.get("contact") or "").strip()
 
@@ -58,6 +66,7 @@ def reload_csv() -> None:
                 _PRIM_INFO_BY_NAME[name] = PrimInfo(
                     name=name,
                     prim_path=prim_path,
+                    category=category,
                     type=type_,
                     contact=contact,
                 )
@@ -81,6 +90,16 @@ def get_prim_info(name: str) -> Optional[PrimInfo]:
         The corresponding PrimInfo object, or None if not found.
     """
     return _PRIM_INFO_BY_NAME.get(name)
+
+
+def get_all_prim_info() -> List[PrimInfo]:
+    """
+    Retrieves all loaded PrimInfo objects.
+
+    Returns:
+        List[PrimInfo]: A list of all loaded prim information.
+    """
+    return list(_PRIM_INFO_BY_NAME.values())
 
 
 # Load immediately when the module is imported to ensure data is available

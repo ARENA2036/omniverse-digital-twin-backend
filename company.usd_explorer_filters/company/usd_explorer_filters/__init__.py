@@ -21,6 +21,8 @@ class Extension(omni.ext.IExt):
         """
         Called when the extension is loaded.
         
+        Initializes the data bridge, stream bridge, and builds the UI window.
+
         Args:
             ext_id: The unique identifier for this extension instance.
         """
@@ -56,7 +58,8 @@ class Extension(omni.ext.IExt):
         """
         Called when the extension is unloaded.
         
-        Responsible for cleaning up UI resources and restoring the USD stage state.
+        Responsible for cleaning up UI resources, stopping bridges, and 
+        restoring the USD stage state (clearing highlights).
         """
         carb.log_info("[USD Explorer Filters] Extension shutdown")
         

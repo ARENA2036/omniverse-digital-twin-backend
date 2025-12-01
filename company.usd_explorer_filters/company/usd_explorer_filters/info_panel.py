@@ -19,6 +19,9 @@ CUSTOM_KEYS: Dict[str, str] = {
 class InfoPanel:
     """
     A UI panel that displays metadata for the currently selected or overridden prim.
+    
+    It observes the stage selection but allows an 'override' prim to be set,
+    which takes precedence (used when a filter is active).
     """
 
     def __init__(self):
@@ -161,6 +164,13 @@ class InfoPanel:
     def _find_custom_data(self, prim: Usd.Prim, key: str) -> Any:
         """
         Recursively searches for custom data on the prim and its ancestors.
+        
+        Args:
+            prim: The starting prim.
+            key: The custom data key to look for.
+            
+        Returns:
+            The value if found, else None.
         """
         cur = prim
         while cur and cur.IsValid():
@@ -179,6 +189,12 @@ class InfoPanel:
     def _estimate_area_sqm(self, prim: Usd.Prim) -> Optional[float]:
         """
         Estimates the footprint area (X * Y) of the prim's bounding box.
+        
+        Args:
+            prim: The prim to measure.
+            
+        Returns:
+            Estimated area in square meters, or None if calculation fails.
         """
         try:
             cache = UsdGeom.BBoxCache(

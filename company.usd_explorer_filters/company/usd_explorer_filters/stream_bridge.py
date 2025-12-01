@@ -118,11 +118,13 @@ class StreamBridge:
 _bridge_instance: Optional[StreamBridge] = None
 
 def startup() -> None:
+    """Starts the global StreamBridge instance."""
     global _bridge_instance
     _bridge_instance = StreamBridge()
     _bridge_instance.startup()
 
 def shutdown() -> None:
+    """Stops and destroys the global StreamBridge instance."""
     global _bridge_instance
     if _bridge_instance:
         _bridge_instance.shutdown()

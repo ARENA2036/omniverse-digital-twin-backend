@@ -1,4 +1,7 @@
-name,path,type,contact
-Bosch Rexroth,/World/SHF_Bosch_Rexroth_LOD300,Robotik,"Jane Doer, +49 123 456"
-Factory of the Future,/World/SHF_Factory_of_the_Future_LOD300,Produktion,"Max Mustermann, +49 987 654"
-Automobil,/World/SHF_New_Work_Pavilion_LOD300,Automobil,"Some Person, +49 111 222"
+name,path,category,type,contact
+Bosch Rexroth,/World/SHF_Bosch_Rexroth_LOD300,Shop Floor Sectors,Robotik,"Jane Doer, +49 123 456"
+Factory of the Future,/World/SHF_Factory_of_the_Future_LOD300,Shop Floor Sectors,Produktion,"Max Mustermann, +49 987 654"
+Automobil,/World/SHF_New_Work_Pavilion_LOD300,Shop Floor Sectors,Automobil,"Some Person, +49 111 222"
+Start-up,/World/SHF_Startup_Area_LOD300,Classification,Start-up,"Founder, +49 555 666"
+Konzern,/World/SHF_Konzern_Area_LOD300,Classification,Konzern,"CEO, +49 777 888"
+Mittelstand,/World/SHF_Mittelstand_Area_LOD300,Classification,Mittelstand,"Manager, +49 999 000"
