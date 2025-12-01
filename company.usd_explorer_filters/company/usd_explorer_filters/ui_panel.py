@@ -1,0 +1,330 @@
+import omni.ui as ui
+from pxr import Usd, UsdGeom, UsdShade, Sdf
+import omni.usd
+import carb
+from typing import Dict, Optional, Any
+from . import csv_bridge
+
+# ------------------------------------------------------------------------------
+# Constants
+# ------------------------------------------------------------------------------
+
+# Path to the highlight material in the USD stage.
+# This material must exist for highlighting to work.
+HIGHLIGHT_MAT_PATH = "/World/Looks/Highlight_Mat"
+
+# ------------------------------------------------------------------------------
+# State Management
+# ------------------------------------------------------------------------------
+
+# Store original material bindings per prim to allow restoration.
+# Mapping: prim_path (str) -> original_material_path (Sdf.Path) or None
+_ORIGINAL_MATERIALS: Dict[str, Optional[Sdf.Path]] = {}
+
+# Registry of filter checkbox models to allow programmatic control
+# Mapping: label (str) -> ui.SimpleBoolModel
+_FILTER_MODELS: Dict[str, ui.SimpleBoolModel] = {}
+
+
+def _set_subtree_highlight_shader(root_path: str, highlighted: bool) -> None:
+    """
+    Applies or removes the highlight material on the given prim and all its children.
+
+    This function recursively traverses the stage from `root_path`. It uses
+    `UsdShade.MaterialBindingAPI` to bind the highlight material. Original bindings
+    are cached in `_ORIGINAL_MATERIALS` to be restored later.
+
+    Args:
+        root_path: The absolute USD path to the root prim of the subtree.
+        highlighted: True to apply highlight, False to restore original materials.
+    """
+    ctx = omni.usd.get_context()
+    stage = ctx.get_stage()
+    if not stage:
+        carb.log_warn("[USD Explorer Filters] No active stage found.")
+        return
+
+    root_prim = stage.GetPrimAtPath(root_path)
+    if not root_prim or not root_prim.IsValid():
+        carb.log_warn(f"[USD Explorer Filters] Root prim not found or invalid: {root_path}")
+        return
+
+    # Get highlight material when turning ON
+    highlight_mat = None
+    if highlighted:
+        mat_prim = stage.GetPrimAtPath(HIGHLIGHT_MAT_PATH)
+        if not mat_prim or not mat_prim.IsValid():
+            carb.log_warn(f"[USD Explorer Filters] Highlight material not found at {HIGHLIGHT_MAT_PATH}")
+            return
+        highlight_mat = UsdShade.Material(mat_prim)
+
+    # Walk root and children
+    for prim in Usd.PrimRange(root_prim):
+        if not prim.IsA(UsdGeom.Imageable):
+            continue
+
+        prim_path = prim.GetPath().pathString
+        binding_api = UsdShade.MaterialBindingAPI(prim)
+
+        if highlighted:
+            # Remember original direct binding once
+            if prim_path not in _ORIGINAL_MATERIALS:
+                bound = binding_api.GetDirectBinding().GetMaterial()
+                _ORIGINAL_MATERIALS[prim_path] = bound.GetPath() if bound else None
+
+            # Bind highlight material
+            if highlight_mat:
+                binding_api.Bind(highlight_mat)
+
+        else:
+            # Restore original material if we have it
+            if prim_path not in _ORIGINAL_MATERIALS:
+                continue  # we never changed this one
+
+            original_path = _ORIGINAL_MATERIALS[prim_path]
+
+            if original_path is None:
+                # No original → remove our direct binding
+                binding_api.UnbindDirectBinding()
+            else:
+                orig_prim = stage.GetPrimAtPath(original_path)
+                if not orig_prim or not orig_prim.IsValid():
+                    # Original material gone? best effort: unbind
+                    binding_api.UnbindDirectBinding()
+                    continue
+
+                original_mat = UsdShade.Material(orig_prim)
+                binding_api.Bind(original_mat)
+
+
+def clear_all_highlights() -> None:
+    """
+    Restores all original material bindings for any prims that have been highlighted.
+
+    This should be called on extension shutdown to ensure no temporary highlight
+    materials are left in the USD stage.
+    """
+    ctx = omni.usd.get_context()
+    stage = ctx.get_stage()
+    if not stage:
+        return
+
+    for prim_path, original_path in list(_ORIGINAL_MATERIALS.items()):
+        prim = stage.GetPrimAtPath(prim_path)
+        if not prim or not prim.IsValid():
+            continue
+
+        binding_api = UsdShade.MaterialBindingAPI(prim)
+
+        if original_path is None:
+            # No original material → remove our direct binding
+            binding_api.UnbindDirectBinding()
+        else:
+            orig_prim = stage.GetPrimAtPath(original_path)
+            if not orig_prim or not orig_prim.IsValid():
+                # Original material gone → best effort: unbind
+                binding_api.UnbindDirectBinding()
+            else:
+                original_mat = UsdShade.Material(orig_prim)
+                binding_api.Bind(original_mat)
+
+    _ORIGINAL_MATERIALS.clear()
+
+
+def _apply_csv_metadata(info: csv_bridge.PrimInfo) -> None:
+    """
+    Writes metadata from a PrimInfo object into the prim's customData.
+
+    This allows the InfoPanel to read the data directly from the prim.
+
+    Args:
+        info: The PrimInfo object containing metadata.
+    """
+    ctx = omni.usd.get_context()
+    stage = ctx.get_stage()
+    if not stage:
+        return
+
+    prim = stage.GetPrimAtPath(info.prim_path)
+    if not prim or not prim.IsValid():
+        carb.log_warn(f"[USD Explorer Filters] Prim not found for CSV row: {info.prim_path}")
+        return
+
+    # Only write if present in CSV
+    if info.contact:
+        prim.SetCustomDataByKey("company:contact", info.contact)
+    if info.type:
+        prim.SetCustomDataByKey("company:type", info.type)
+
+
+def _set_info_override(prim_path: str, active: bool) -> None:
+    """
+    Informs the InfoPanel to show a specific prim when a filter is active.
+    
+    This does NOT change the selection in the Stage, but overrides what the
+    InfoPanel displays.
+
+    Args:
+        prim_path: The path of the prim to show info for.
+        active: True to enable the override, False to disable it.
+    """
+    try:
+        from .info_panel import info_panel_instance
+    except ImportError:
+        info_panel_instance = None
+
+    if not info_panel_instance:
+        return
+
+    if active:
+        info_panel_instance.set_override_prim(prim_path)
+    else:
+        info_panel_instance.set_override_prim(None)
+
+
+def _on_checkbox_changed(label: str, model: ui.SimpleBoolModel) -> None:
+    """
+    Callback for when a filter checkbox is toggled.
+
+    Args:
+        label: The label of the checkbox (e.g., "Bosch Rexroth").
+        model: The UI model holding the checkbox state.
+    """
+    value = model.get_value_as_bool()
+    carb.log_info(f"[USD Explorer Filters] Filter '{label}' changed to: {value}")
+
+    # Look up this label in the CSV
+    info = csv_bridge.get_prim_info(label)
+    if not info:
+        carb.log_warn(f"[USD Explorer Filters] No CSV entry found for '{label}'")
+        return
+
+    root_path = info.prim_path
+
+    # Highlight / unhighlight
+    _set_subtree_highlight_shader(root_path, value)
+
+    # When turning ON, write CSV metadata into prim custom data
+    if value:
+        _apply_csv_metadata(info)
+
+    # Drive the Info panel (override path) without changing stage selection
+    _set_info_override(root_path, value)
+
+
+def set_filter_state(label: str, active: bool) -> None:
+    """
+    Programmatically sets the state of a filter.
+    
+    This is used by external modules (like stream_bridge) to toggle filters.
+    Setting the model value will automatically trigger _on_checkbox_changed.
+    
+    Args:
+        label: The label of the filter (e.g., "Bosch Rexroth").
+        active: True to enable, False to disable.
+    """
+    model = _FILTER_MODELS.get(label)
+    if model:
+        # Avoid redundant updates if value is already correct
+        if model.get_value_as_bool() != active:
+            model.set_value(active)
+    else:
+        carb.log_warn(f"[USD Explorer Filters] Cannot set state for unknown filter: '{label}'")
+
+
+# ------------------------------------------------------------------------------
+# UI Construction
+# ------------------------------------------------------------------------------
+
+def _section_label(text: str) -> None:
+    """Creates a styled section header label."""
+    ui.Label(
+        text,
+        style={
+            "font_size": 18,
+            "color": 0xFF000000,
+            "margin": 0,
+        },
+    )
+
+
+def _checkbox(label: str, default: bool = False) -> ui.SimpleBoolModel:
+    """Creates a checkbox with a label and returns its model."""
+    model = ui.SimpleBoolModel(default)
+    _FILTER_MODELS[label] = model  # Register model
+    
+    ui.CheckBox(model=model)
+    ui.Spacer(width=6)
+    ui.Label(label, alignment=ui.Alignment.LEFT_CENTER)
+    model.add_value_changed_fn(lambda m: _on_checkbox_changed(label, m))
+    return model
+
+
+def _group_box(title: str, build_content_fn: callable) -> None:
+    """Creates a visual group box with a title and content."""
+    with ui.VStack(spacing=4, height=0):
+        _section_label(title)
+        # subtle separator
+        ui.Line()
+        with ui.VStack(spacing=4, height=0, style={"margin": 4}):
+            build_content_fn()
+        ui.Spacer(height=8)
+
+
+def build_panel() -> None:
+    """
+    Builds the main content of the Filter tab.
+    """
+    # Clear old models when rebuilding UI to avoid leaks or stale references
+    _FILTER_MODELS.clear()
+    
+    # Wrap everything in a nice padded column
+    with ui.VStack(spacing=10, height=0, style={"margin": 10}):
+        # Header
+        ui.Label(
+            "Filter",
+            style={
+                "font_size": 20,
+                "color": 0xFF202020,
+                "margin": 0,
+            },
+        )
+        ui.Spacer(height=6)
+
+        # --- Group 1: Shop Floor Sectors ------------------------------------
+        def _build_sector_group():
+            with ui.VStack(spacing=4, height=0):
+                with ui.HStack(spacing=4, height=0):
+                    _checkbox("Bosch Rexroth", default=False)
+                with ui.HStack(spacing=4, height=0):
+                    _checkbox("Factory of the Future", default=False)
+                with ui.HStack(spacing=4, height=0):
+                    _checkbox("Automobil", default=False)
+
+        _group_box("Shop Floor Sectors", _build_sector_group)
+
+        # --- Group 2: Classification -------------------------------------------------
+        def _build_size_group():
+            with ui.VStack(spacing=4, height=0):
+                with ui.HStack(spacing=4, height=0):
+                    _checkbox("Start-up", default=False)
+                with ui.HStack(spacing=4, height=0):
+                    _checkbox("Konzern", default=False)
+                with ui.HStack(spacing=4, height=0):
+                    _checkbox("Mittelstand", default=False)
+
+        _group_box("Classification", _build_size_group)
+
+        ui.Spacer(height=4)
+        ui.Line()
+        ui.Spacer(height=4)
+
+        # Help text
+        ui.Label(
+            "Use these filters to highlight \npartners in the Arena2036.",
+            word_wrap=True,
+            style={
+                "font_size": 12,
+                "color": 0xFF707070,
+            },
+        )

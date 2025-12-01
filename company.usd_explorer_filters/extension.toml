@@ -1,0 +1,20 @@
+[package]
+# Unique name for the extension
+name = "company.usd_explorer_filters"
+title = "USD Explorer Filter Panel"
+version = "1.0.0"
+description = "Adds a right-side filter widget panel to USD Explorer."
+category = "UI"
+authors = ["Arjun"]
+readme = ""
+repository = ""
+keywords = ["usd", "explorer", "filters", "ui"]
+
+[dependencies]
+"omni.kit.uiapp" = {}
+"omni.usd" = {}
+"omni.ui" = {}
+"omni.kit.livestream.core" = {}
+
+[[python.module]]
+name = "company.usd_explorer_filters"
