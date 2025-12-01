@@ -43,7 +43,8 @@ def reload_csv() -> None:
         return
 
     try:
-        with open(csv_path, newline="", encoding="utf-8") as f:
+        # Use utf-8-sig to handle potential BOM
+        with open(csv_path, newline="", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             
             # Check if the CSV is empty or headers are missing
@@ -52,11 +53,15 @@ def reload_csv() -> None:
                  return
 
             for row_idx, row in enumerate(reader, start=2): # Start at 2 for line number (header is 1)
-                name = (row.get("name") or "").strip()
-                prim_path = (row.get("path") or "").strip()
-                category = (row.get("category") or "Uncategorized").strip()
-                type_ = (row.get("type") or "").strip()
-                contact = (row.get("contact") or "").strip()
+                # Normalize keys and values by stripping whitespace
+                # This handles cases where headers might have spaces like "name " or " name"
+                clean_row = {k.strip(): (v or "").strip() for k, v in row.items() if k}
+                
+                name = clean_row.get("name", "")
+                prim_path = clean_row.get("path", "")
+                category = clean_row.get("category") or "Uncategorized"
+                type_ = clean_row.get("type", "")
+                contact = clean_row.get("contact", "")
 
                 if not name or not prim_path:
                     # Skip incomplete rows but log a warning for visibility

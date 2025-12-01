@@ -25,6 +25,8 @@ _ORIGINAL_MATERIALS: Dict[str, Optional[Sdf.Path]] = {}
 # Registry of filter checkbox models to allow programmatic control
 # Mapping: label (str) -> ui.SimpleBoolModel
 _FILTER_MODELS: Dict[str, ui.SimpleBoolModel] = {}
+# Track which filter currently owns the Info tab override
+_ACTIVE_INFO_LABEL: Optional[str] = None
 
 
 def _set_subtree_highlight_shader(root_path: str, highlighted: bool) -> None:
@@ -158,30 +160,30 @@ def _apply_csv_metadata(info: csv_bridge.PrimInfo) -> None:
         prim.SetCustomDataByKey("company:type", info.type)
 
 
-def _set_info_override(prim_path: str, active: bool) -> None:
+def _set_info_override(info: Optional[csv_bridge.PrimInfo], active: bool) -> None:
     """
-    Informs the InfoPanel to show a specific prim when a filter is active.
-    
-    This does NOT change the selection in the Stage, but overrides what the
-    InfoPanel displays.
+    Update the Info tab override so it mirrors the currently toggled filter.
 
     Args:
-        prim_path: The path of the prim to show info for.
-        active: True to enable the override, False to disable it.
+        info: PrimInfo for the active filter.
+        active: True to show this filter in the Info tab, False to clear.
     """
-    try:
-        from .info_panel import info_panel_instance
-    except ImportError:
-        info_panel_instance = None
+    from .info_panel import info_panel_instance  # local import to avoid circulars
 
-    if not info_panel_instance:
+    global _ACTIVE_INFO_LABEL
+    panel = info_panel_instance
+    if not panel:
+        carb.log_warn("[USD Explorer Filters] InfoPanel not available to show CSV data.")
         return
 
-    if active:
-        info_panel_instance.set_override_prim(prim_path)
-    else:
-        info_panel_instance.set_override_prim(None)
-
+    if active and info:
+        _ACTIVE_INFO_LABEL = info.name
+        panel.set_override(info.prim_path, info)
+    elif not active:
+        # Only clear if we are turning off the entry that currently owns the override
+        if _ACTIVE_INFO_LABEL is None or (info and _ACTIVE_INFO_LABEL == info.name):
+            _ACTIVE_INFO_LABEL = None
+            panel.set_override(None, None)
 
 def _on_checkbox_changed(label: str, model: ui.SimpleBoolModel) -> None:
     """
@@ -205,12 +207,25 @@ def _on_checkbox_changed(label: str, model: ui.SimpleBoolModel) -> None:
     # Highlight / unhighlight
     _set_subtree_highlight_shader(root_path, value)
 
-    # When turning ON, write CSV metadata into prim custom data
+    # When turning ON, write CSV metadata into prim custom data (only if prim exists)
     if value:
-        _apply_csv_metadata(info)
+        ctx = omni.usd.get_context()
+        stage = ctx.get_stage()
+        if not stage:
+            carb.log_warn("[USD Explorer Filters] Cannot apply filter; no active USD stage.")
+            _set_info_override(None, False)
+            return
 
-    # Drive the Info panel (override path) without changing stage selection
-    _set_info_override(root_path, value)
+        prim = stage.GetPrimAtPath(root_path) if stage else None
+        if not prim or not prim.IsValid():
+            carb.log_warn(f"[USD Explorer Filters] Cannot apply filter; prim not found: {root_path}")
+            _set_info_override(None, False)
+            return
+
+        _apply_csv_metadata(info)
+        _set_info_override(info, True)
+    else:
+        _set_info_override(info, False)
 
 
 def set_filter_state(label: str, active: bool) -> None:
@@ -267,6 +282,9 @@ def build_panel() -> None:
     """
     # Clear old models when rebuilding UI to avoid leaks or stale references
     _FILTER_MODELS.clear()
+    
+    # Reload CSV to ensure we have the latest data
+    csv_bridge.reload_csv()
     
     # Get all data and group by category
     all_info = csv_bridge.get_all_prim_info()

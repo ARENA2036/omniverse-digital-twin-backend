@@ -8,7 +8,6 @@ from typing import Optional, Tuple, Dict, Any
 # Global reference so other modules can reach the active panel
 info_panel_instance: Optional["InfoPanel"] = None
 
-
 # Keys we’ll read from Prim Custom Data (Metadata)
 CUSTOM_KEYS: Dict[str, str] = {
     "contact": "company:contact",
@@ -17,66 +16,47 @@ CUSTOM_KEYS: Dict[str, str] = {
 }
 
 class InfoPanel:
-    """
-    A UI panel that displays metadata for the currently selected or overridden prim.
-    
-    It observes the stage selection but allows an 'override' prim to be set,
-    which takes precedence (used when a filter is active).
+    """UI panel that displays metadata for the currently selected or overridden prim.
+
+    It observes the stage selection but allows an 'override' prim to be set, which takes
+    precedence (used when a filter is active).
     """
 
     def __init__(self):
         global info_panel_instance
         info_panel_instance = self
-        
-        # UI models
-        self._path = ui.SimpleStringModel("")
+        # UI models – path is hidden per user request
         self._type = ui.SimpleStringModel("-")
         self._contact = ui.SimpleStringModel("-")
         self._area = ui.SimpleStringModel("-")
-
         # State
         self._meters_per_unit: float = 1.0
         self._last_selection: Tuple[str, ...] = tuple()
-        self._update_sub: Optional[Any] = None  # Subscription to update event
         self._override_path: Optional[str] = None
-
-        # Cache metersPerUnit if a stage is open
+        # When a filter is active we may want to display CSV info directly
+        self._override_info: Optional[Any] = None
+        # Subscribe to per‑frame updates
+        app = omni.kit.app.get_app()
+        self._update_sub = app.get_update_event_stream().create_subscription_to_pop(
+            self._on_update, name="info_panel_update"
+        )
+        # Cache meters‑per‑unit if a stage is already open
         ctx = omni.usd.get_context()
         stage = ctx.get_stage()
         if stage:
             self._meters_per_unit = UsdGeom.GetStageMetersPerUnit(stage) or 1.0
 
-    def set_override_prim(self, prim_path: Optional[str]) -> None:
-        """
-        Sets a specific prim to display, ignoring the current stage selection.
-        
-        Args:
-            prim_path: The path of the prim to show, or None to revert to selection.
-        """
-        self._override_path = prim_path
-        # Force an immediate update
-        self._poll_selection()
-
-    def destroy(self) -> None:
-        """Cleans up resources and subscriptions."""
-        if hasattr(self, "_update_sub") and self._update_sub:
-            self._update_sub = None
-        
-        global info_panel_instance
-        if info_panel_instance == self:
-            info_panel_instance = None
-
-    # ---------- UI ----------
-
+    # ---------------------------------------------------------------------
+    # UI construction
+    # ---------------------------------------------------------------------
     def build(self) -> None:
-        """Builds the UI widgets for the info panel."""
+        """Create the UI widgets for the info panel."""
         with ui.VStack(spacing=8, height=0, style={"margin": 10}):
             ui.Label("Selected Prim", style={"font_size": 18})
-            self._line("Path", self._path)
+            # Path is intentionally hidden
             self._line("Type", self._type)
             self._line("Contact", self._contact)
             self._line("Area (m²)", self._area)
-
             ui.Spacer(height=8)
             ui.Label(
                 "Add Prim Custom Data in this format:\n"
@@ -86,115 +66,117 @@ class InfoPanel:
                 word_wrap=True,
                 style={"color": 0xFF777777, "font_size": 12},
             )
-            
-        # Subscribe to update events (runs every frame)
-        app = omni.kit.app.get_app()
-        self._update_sub = app.get_update_event_stream().create_subscription_to_pop(
-            self._on_update,
-            name="info_panel_update"
-        )
-
-    def _on_update(self, e: Any) -> None:
-        """Called every frame to poll for selection changes."""
-        self._poll_selection()
 
     def _line(self, label: str, model: ui.SimpleStringModel) -> None:
-        """Helper to create a labeled text field."""
+        """Helper to create a labeled read‑only text field."""
         with ui.HStack(height=0):
             ui.Label(label, width=110, alignment=ui.Alignment.RIGHT_CENTER)
             ui.Spacer(width=6)
             ui.StringField(model=model, read_only=True)
 
-    # ---------- Selection polling ----------
+    # ---------------------------------------------------------------------
+    # Update handling
+    # ---------------------------------------------------------------------
+    def _on_update(self, e: Any) -> None:
+        """Called each frame – poll for selection or override changes."""
+        self._poll_selection()
 
     def _poll_selection(self) -> None:
-        """Checks for changes in selection or override path."""
+        """Detect changes in stage selection or overridden prim and update UI."""
         ctx = omni.usd.get_context()
-
-        # If there is an override prim, use that instead of selection
         if self._override_path:
             paths = (self._override_path,)
         else:
             sel = ctx.get_selection()
             paths = tuple(sel.get_selected_prim_paths() or ())
-
         if paths != self._last_selection:
             self._last_selection = paths
             self._on_selection_changed(paths)
 
-    # ---------- Selection handling ----------
-
+    # ---------------------------------------------------------------------
+    # Selection handling
+    # ---------------------------------------------------------------------
     def _on_selection_changed(self, paths: Tuple[str, ...]) -> None:
-        """Updates the UI when the selection changes."""
+        """Update UI models based on the currently selected (or overridden) prim."""
         if not paths:
-            self._path.set_value("")
             self._type.set_value("-")
             self._contact.set_value("-")
             self._area.set_value("-")
             return
-
         prim_path = paths[0]
-        self._path.set_value(prim_path)
-
         prim = self._get_prim(prim_path)
         if not prim or not prim.IsValid():
             self._type.set_value("-")
             self._contact.set_value("-")
             self._area.set_value("-")
             return
-
-        # Read metadata (walk up to parent if missing)
-        c_type = self._find_custom_data(prim, CUSTOM_KEYS["type"]) or "-"
-        c_contact = self._find_custom_data(prim, CUSTOM_KEYS["contact"]) or "-"
-
+        # Use override info if present (set by ui_panel when a filter is active)
+        if self._override_info is not None:
+            c_type = getattr(self._override_info, "type", "-") or "-"
+            c_contact = getattr(self._override_info, "contact", "-") or "-"
+        else:
+            c_type = self._find_custom_data(prim, CUSTOM_KEYS["type"]) or "-"
+            c_contact = self._find_custom_data(prim, CUSTOM_KEYS["contact"]) or "-"
         area_est = self._estimate_area_sqm(prim)
         area_str = f"{area_est:,.2f}" if area_est is not None else "-"
-
         self._type.set_value(str(c_type))
         self._contact.set_value(str(c_contact))
         self._area.set_value(area_str)
 
-    # ---------- Helpers ----------
+    # ---------------------------------------------------------------------
+    # Public API used by ui_panel
+    # ---------------------------------------------------------------------
+    def set_override(self, prim_path: Optional[str], info: Optional[Any] = None) -> None:
+        """Set a specific prim (and optional info object) to display.
 
+        Args:
+            prim_path: The path of the prim to show, or None to revert to selection.
+            info:      Optional data object containing type/contact overrides.
+        """
+        self._override_path = prim_path
+        self._override_info = info if prim_path else None
+        self._poll_selection()
+
+    def set_override_prim(self, prim_path: Optional[str]) -> None:
+        """Backward‑compatible wrapper to set only the prim override."""
+        self.set_override(prim_path, None)
+
+    def destroy(self) -> None:
+        """Clean up resources and subscriptions."""
+        if hasattr(self, "_update_sub") and self._update_sub:
+            self._update_sub = None
+        global info_panel_instance
+        if info_panel_instance == self:
+            info_panel_instance = None
+
+    # ---------------------------------------------------------------------
+    # Helpers
+    # ---------------------------------------------------------------------
     def _get_prim(self, path: str) -> Optional[Usd.Prim]:
-        """Retrieves a prim from the current stage."""
+        """Retrieve a prim from the current stage."""
         stage = omni.usd.get_context().get_stage()
         return stage.GetPrimAtPath(path) if stage else None
 
     def _find_custom_data(self, prim: Usd.Prim, key: str) -> Any:
-        """
-        Recursively searches for custom data on the prim and its ancestors.
-        
-        Args:
-            prim: The starting prim.
-            key: The custom data key to look for.
-            
-        Returns:
-            The value if found, else None.
+        """Walk up the prim hierarchy to find custom data for *key*.
+
+        Returns the value if found, otherwise ``None``.
         """
         cur = prim
         while cur and cur.IsValid():
             try:
-                data = cur.GetCustomData()  # returns a dict-like
+                data = cur.GetCustomData()
             except Exception:
                 data = {}
-
             if data and key in data:
                 return data[key]
-
             cur = cur.GetParent()
-
         return None
 
     def _estimate_area_sqm(self, prim: Usd.Prim) -> Optional[float]:
-        """
-        Estimates the footprint area (X * Y) of the prim's bounding box.
-        
-        Args:
-            prim: The prim to measure.
-            
-        Returns:
-            Estimated area in square meters, or None if calculation fails.
+        """Estimate the footprint area (X * Y) of *prim* in square meters.
+
+        Returns ``None`` if the calculation fails.
         """
         try:
             cache = UsdGeom.BBoxCache(
@@ -204,7 +186,7 @@ class InfoPanel:
             )
             bbox = cache.ComputeWorldBound(prim)
             size = bbox.ComputeAlignedRange().GetSize()  # X,Y,Z in stage units
-            to_m = self._meters_per_unit  # meters per 1 stage unit
+            to_m = self._meters_per_unit
             width_m = size[0] * to_m
             depth_m = size[1] * to_m
             return max(0.0, width_m) * max(0.0, depth_m)

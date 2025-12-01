@@ -1,7 +1,11 @@
 import carb
-import omni.kit.livestream.core
-from typing import Dict, Any, Optional
 import json
+from typing import Dict, Any, Optional
+# Safely import livestream core; may be unavailable in some Kit versions
+try:
+    import omni.kit.livestream.core as _livestream_core
+except Exception:
+    _livestream_core = None
 
 from . import ui_panel
 
@@ -16,7 +20,16 @@ class StreamBridge:
     """
     
     def __init__(self):
-        self._livestream = omni.kit.livestream.core.get_livestream()
+        # Attempt to retrieve livestream instance safely
+        if _livestream_core and hasattr(_livestream_core, "get_livestream"):
+            try:
+                self._livestream = _livestream_core.get_livestream()
+            except Exception as e:
+                carb.log_warn(f"[USD Explorer Filters] Failed to obtain livestream: {e}")
+                self._livestream = None
+        else:
+            carb.log_warn("[USD Explorer Filters] omni.kit.livestream.core not available or missing get_livestream")
+            self._livestream = None
         self._event_subscription = None
         
     def startup(self) -> None:
