@@ -1,5 +1,6 @@
 import os
 import csv
+import re
 import carb
 from typing import Optional, Dict, List
 from collections import namedtuple
@@ -10,7 +11,8 @@ from collections import namedtuple
 
 # Define the structure for prim information
 # Added 'category' to support dynamic UI grouping
-PrimInfo = namedtuple("PrimInfo", ["name", "prim_path", "category", "type", "contact"])
+# Added 'prim_paths' to support multiple prims per entry (first item is the primary path)
+PrimInfo = namedtuple("PrimInfo", ["name", "prim_path", "prim_paths", "category", "type", "contact"])
 
 # Global dictionary: "Bosch Rexroth" -> PrimInfo(...)
 _PRIM_INFO_BY_NAME: Dict[str, PrimInfo] = {}
@@ -58,19 +60,27 @@ def reload_csv() -> None:
                 clean_row = {k.strip(): (v or "").strip() for k, v in row.items() if k}
                 
                 name = clean_row.get("name", "")
-                prim_path = clean_row.get("path", "")
+                prim_path_raw = clean_row.get("path", "")
+                prim_paths = [
+                    p.strip() for p in re.split(r"[;,]", prim_path_raw) if p and p.strip()
+                ]
+                if prim_paths:
+                    prim_path = prim_paths[0]
+                else:
+                    prim_path = ""
                 category = clean_row.get("category") or "Uncategorized"
                 type_ = clean_row.get("type", "")
                 contact = clean_row.get("contact", "")
 
                 if not name or not prim_path:
                     # Skip incomplete rows but log a warning for visibility
-                    carb.log_warn(f"[usd_explorer_filters] Skipping incomplete row {row_idx} in CSV: name='{name}', path='{prim_path}'")
+                    carb.log_warn(f"[usd_explorer_filters] Skipping incomplete row {row_idx} in CSV: name='{name}', path='{prim_path_raw}'")
                     continue
 
                 _PRIM_INFO_BY_NAME[name] = PrimInfo(
                     name=name,
                     prim_path=prim_path,
+                    prim_paths=prim_paths,
                     category=category,
                     type=type_,
                     contact=contact,

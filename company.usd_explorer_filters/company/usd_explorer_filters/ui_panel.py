@@ -2,6 +2,8 @@ import omni.ui as ui
 from pxr import Usd, UsdGeom, UsdShade, Sdf
 import omni.usd
 import carb
+import omni.kit.viewport.utility as vp_utils
+import omni.kit.commands as kit_commands
 from typing import Dict, Optional, Any, List
 from collections import defaultdict
 from . import csv_bridge
@@ -148,16 +150,17 @@ def _apply_csv_metadata(info: csv_bridge.PrimInfo) -> None:
     if not stage:
         return
 
-    prim = stage.GetPrimAtPath(info.prim_path)
-    if not prim or not prim.IsValid():
-        carb.log_warn(f"[USD Explorer Filters] Prim not found for CSV row: {info.prim_path}")
-        return
+    for path in info.prim_paths:
+        prim = stage.GetPrimAtPath(path)
+        if not prim or not prim.IsValid():
+            carb.log_warn(f"[USD Explorer Filters] Prim not found for CSV row: {path}")
+            continue
 
-    # Only write if present in CSV
-    if info.contact:
-        prim.SetCustomDataByKey("company:contact", info.contact)
-    if info.type:
-        prim.SetCustomDataByKey("company:type", info.type)
+        # Only write if present in CSV
+        if info.contact:
+            prim.SetCustomDataByKey("company:contact", info.contact)
+        if info.type:
+            prim.SetCustomDataByKey("company:type", info.type)
 
 
 def _set_info_override(info: Optional[csv_bridge.PrimInfo], active: bool) -> None:
@@ -178,7 +181,7 @@ def _set_info_override(info: Optional[csv_bridge.PrimInfo], active: bool) -> Non
 
     if active and info:
         _ACTIVE_INFO_LABEL = info.name
-        panel.set_override(info.prim_path, info)
+        panel.set_override(info.prim_paths[0] if info.prim_paths else None, info)
     elif not active:
         # Only clear if we are turning off the entry that currently owns the override
         if _ACTIVE_INFO_LABEL is None or (info and _ACTIVE_INFO_LABEL == info.name):
@@ -202,10 +205,11 @@ def _on_checkbox_changed(label: str, model: ui.SimpleBoolModel) -> None:
         carb.log_warn(f"[USD Explorer Filters] No CSV entry found for '{label}'")
         return
 
-    root_path = info.prim_path
+    prim_paths = info.prim_paths
 
     # Highlight / unhighlight
-    _set_subtree_highlight_shader(root_path, value)
+    for path in prim_paths:
+        _set_subtree_highlight_shader(path, value)
 
     # When turning ON, write CSV metadata into prim custom data (only if prim exists)
     if value:
@@ -216,9 +220,9 @@ def _on_checkbox_changed(label: str, model: ui.SimpleBoolModel) -> None:
             _set_info_override(None, False)
             return
 
-        prim = stage.GetPrimAtPath(root_path) if stage else None
+        prim = stage.GetPrimAtPath(prim_paths[0]) if stage and prim_paths else None
         if not prim or not prim.IsValid():
-            carb.log_warn(f"[USD Explorer Filters] Cannot apply filter; prim not found: {root_path}")
+            carb.log_warn(f"[USD Explorer Filters] Cannot apply filter; prim not found: {prim_paths[0] if prim_paths else 'None'}")
             _set_info_override(None, False)
             return
 
@@ -248,6 +252,174 @@ def set_filter_state(label: str, active: bool) -> None:
         carb.log_warn(f"[USD Explorer Filters] Cannot set state for unknown filter: '{label}'")
 
 
+def _focus_prim(label: str) -> None:
+    """
+    Frames the viewport on the prim associated with the given label.
+
+    Args:
+        label: The filter label whose prim should be focused.
+    """
+    info = csv_bridge.get_prim_info(label)
+    if not info:
+        carb.log_warn(f"[USD Explorer Filters] Cannot focus; no CSV entry for '{label}'")
+        return
+
+    ctx = omni.usd.get_context()
+    stage = ctx.get_stage()
+    if not stage:
+        carb.log_warn("[USD Explorer Filters] Cannot focus; no active USD stage.")
+        return
+
+    focus_path = info.prim_paths[0] if getattr(info, "prim_paths", None) else info.prim_path
+    prim = stage.GetPrimAtPath(focus_path)
+    if not prim or not prim.IsValid():
+        carb.log_warn(f"[USD Explorer Filters] Cannot focus; prim not found: {focus_path}")
+        return
+
+    # Preselect the prim so frame_selection fallbacks work across API versions.
+    try:
+        selection = ctx.get_selection()
+        if selection:
+            selection.clear_selected_prim_paths()
+            selection.set_prim_path_selected(focus_path, True, False, False, False)
+            # Also set the main selection (covers older APIs)
+            try:
+                ctx.get_selection().set_selected_prim_paths([focus_path], False)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    try:
+        # Try the active viewport API first; fall back to the window helper if needed.
+        viewport_win = None
+        viewport_api = None
+
+        try:
+            viewport_win = vp_utils.get_active_viewport_window()
+            viewport_api = getattr(viewport_win, "viewport_api", None)
+        except Exception:
+            viewport_win = None
+
+        success = False
+        controller = None
+
+        # Newer APIs expose frame_prim on the viewport API; older ones expose it on the window.
+        if viewport_api and hasattr(viewport_api, "frame_prim"):
+            viewport_api.frame_prim(focus_path)
+            success = True
+        elif viewport_win and hasattr(viewport_win, "frame_prim"):
+            viewport_win.frame_prim(focus_path)
+            success = True
+        elif viewport_api and hasattr(viewport_api, "get_viewport_camera_controller"):
+            controller = viewport_api.get_viewport_camera_controller()
+            if controller and hasattr(controller, "frame_paths"):
+                controller.frame_paths(info.prim_paths if getattr(info, "prim_paths", None) else [focus_path])
+                success = True
+            elif controller and hasattr(controller, "frame_selection"):
+                controller.frame_selection()
+                success = True
+        elif viewport_api and hasattr(viewport_api, "frame_selection"):
+            viewport_api.frame_selection()
+            success = True
+        elif viewport_win and hasattr(viewport_win, "frame_selection"):
+            viewport_win.frame_selection()
+            success = True
+        elif viewport_api and hasattr(viewport_api, "get_viewport_camera_controller"):
+            controller = viewport_api.get_viewport_camera_controller()
+            if controller and hasattr(controller, "frame_selection"):
+                controller.frame_selection()
+                success = True
+        elif viewport_win and hasattr(viewport_win, "get_viewport_camera_controller"):
+            controller = viewport_win.get_viewport_camera_controller()
+            if controller and hasattr(controller, "frame_selection"):
+                controller.frame_selection()
+                success = True
+        elif hasattr(vp_utils, "get_active_viewport"):
+            try:
+                viewport = vp_utils.get_active_viewport()
+                if viewport and hasattr(viewport, "frame_selection"):
+                    viewport.frame_selection()
+                    success = True
+            except Exception:
+                pass
+        elif hasattr(vp_utils, "frame_prim"):
+            vp_utils.frame_prim(focus_path)
+            success = True
+
+        if not success:
+            # Use FramePrimsCommand with active viewport data or a temporary camera.
+            try:
+                active_viewport = vp_utils.get_active_viewport() if hasattr(vp_utils, "get_active_viewport") else None
+                time_code = Usd.TimeCode.Default()
+                resolution = (1, 1)
+                camera_path = None
+
+                if active_viewport:
+                    time_code = getattr(active_viewport, "time", time_code)
+                    res = getattr(active_viewport, "resolution", None)
+                    if res and len(res) >= 2 and res[0] and res[1]:
+                        resolution = res
+                    camera_path = getattr(active_viewport, "camera_path", None)
+
+                if not camera_path:
+                    camera_path = "/World/TempFocusCamera"
+                    UsdGeom.Camera.Define(stage, camera_path)
+
+                aspect_ratio = resolution[0] / resolution[1] if resolution[1] else 1.0
+
+                kit_commands.execute(
+                    "FramePrimsCommand",
+                    prim_to_move=camera_path,
+                    prims_to_frame=info.prim_paths if getattr(info, "prim_paths", None) else [focus_path],
+                    time_code=time_code,
+                    aspect_ratio=aspect_ratio,
+                    zoom=0.3,
+                )
+                success = True
+            except Exception:
+                pass
+
+        if not success:
+            # Try a set of known command names, some take paths, others use current selection.
+            command_attempts = [
+                ("FramePrims", {"paths": info.prim_paths if getattr(info, "prim_paths", None) else [focus_path]}),
+                ("FrameSelected", {}),
+                ("FrameSelectedCommand", {}),
+                ("FrameSelection", {}),
+                ("FrameViewportSelection", {}),
+                ("SelectAndFrame", {"paths": info.prim_paths if getattr(info, "prim_paths", None) else [focus_path]}),
+            ]
+            for cmd_name, kwargs in command_attempts:
+                try:
+                    command_dict = getattr(kit_commands, "get_command_dict", None)
+                    if command_dict:
+                        available = command_dict()
+                        if cmd_name not in available:
+                            continue
+                    kit_commands.execute(cmd_name, **kwargs)
+                    success = True
+                    break
+                except Exception:
+                    continue
+
+        if success:
+            carb.log_info(f"[USD Explorer Filters] Focused prim: {focus_path}")
+        else:
+            carb.log_error("[USD Explorer Filters] No viewport API available to focus prim.")
+    except Exception as e:
+        carb.log_error(f"[USD Explorer Filters] Failed to focus prim '{focus_path}': {e}")
+    finally:
+        # Clear selection so the UI does not leave the prim selected after focusing.
+        try:
+            selection = ctx.get_selection()
+            if selection:
+                selection.clear_selected_prim_paths()
+                selection.set_selected_prim_paths([], False)
+        except Exception:
+            pass
+
+
 # ------------------------------------------------------------------------------
 # UI Construction
 # ------------------------------------------------------------------------------
@@ -269,6 +441,14 @@ def _checkbox(label: str, default: bool = False) -> ui.SimpleBoolModel:
     ui.CheckBox(model=model)
     ui.Spacer(width=6)
     ui.Label(label, alignment=ui.Alignment.LEFT_CENTER)
+    ui.Spacer(width=4)
+    ui.Button(
+        "Focus",
+        height=0,
+        width=60,
+        clicked_fn=lambda l=label: _focus_prim(l),
+        tooltip="Frame the viewport on this prim",
+    )
     model.add_value_changed_fn(lambda m: _on_checkbox_changed(label, m))
     return model
 
