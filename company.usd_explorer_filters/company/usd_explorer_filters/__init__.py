@@ -35,7 +35,7 @@ class Extension(omni.ext.IExt):
         carb.log_info("[USD Explorer Filters] Extension startup")
 
         self._window: Optional[ui.Window] = ui.Window(
-            "USD Explorer Filters",
+            "ARENA2036 Shop Floor MAnager",
             width=420,
             height=600,
             dockPreference=ui.DockPreference.RIGHT_TOP,

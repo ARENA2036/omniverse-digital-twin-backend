@@ -1,14 +1,14 @@
 [package]
 # Unique name for the extension
 name = "company.usd_explorer_filters"
-title = "USD Explorer Filter Panel"
+title = "ARENA2036 Shop Floor MAnager"
 version = "1.0.0"
 description = "Adds a right-side filter widget panel to USD Explorer."
 category = "UI"
 authors = ["Arjun"]
 readme = ""
 repository = ""
-keywords = ["usd", "explorer", "filters", "ui"]
+keywords = ["manager", "shopfloor", "filters", "ui"]
 
 [dependencies]
 "omni.kit.uiapp" = {}
