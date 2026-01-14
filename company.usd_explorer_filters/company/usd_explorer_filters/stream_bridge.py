@@ -45,18 +45,22 @@ class StreamBridge:
         # Subscribe to the generic message event
         # Note: The actual API might vary slightly depending on the Kit version.
         # We assume a standard message event structure here.
-        self._event_subscription = self._livestream.register_event_handler(
-            "ToggleFilter", 
-            self._on_toggle_filter
-        )
+        # Subscribe to multiple potential event names to find the right one
+        self._subs = []
+        for event_name in ["message", "custom", "ToggleFilter", "FocusPrim"]:
+            sub = self._livestream.register_event_handler(event_name, self._on_generic_event)
+            if sub:
+                self._subs.append((event_name, sub))
+                carb.log_info(f"[USD Explorer Filters] Registered for event: {event_name}")
 
     def shutdown(self) -> None:
         """
         Cleans up subscriptions.
         """
-        if self._event_subscription:
-            self._livestream.unregister_event_handler(self._event_subscription)
-            self._event_subscription = None
+        if hasattr(self, "_subs"):
+            for name, sub in self._subs:
+                self._livestream.unregister_event_handler(sub)
+            self._subs = []
         self._livestream = None
 
     def _on_toggle_filter(self, event_data: Any) -> None:
@@ -76,7 +80,7 @@ class StreamBridge:
         just the payload, or a string depending on the Kit version and transport.
         """
         # Log immediately to show receipt as requested
-        carb.log_info(f"[USD Explorer Filters] Received 'ToggleFilter' event. Raw data: {event_data}")
+        carb.log_info(f"[USD Explorer Filters] BRIDGE: Received 'ToggleFilter' event. Raw: {event_data}")
 
         try:
             data = {}
@@ -126,6 +130,78 @@ class StreamBridge:
             
         except Exception as e:
             carb.log_error(f"[USD Explorer Filters] Error handling ToggleFilter event: {e}")
+
+    def _on_focus_prim(self, event_data: Any) -> None:
+        """
+        Callback for 'FocusPrim' events from the client.
+        payload: { "name": "Bosch Rexroth" }
+        """
+        carb.log_info(f"[USD Explorer Filters] BRIDGE: Received 'FocusPrim' event. Raw: {event_data}")
+        try:
+            data = {}
+            if isinstance(event_data, dict):
+                data = event_data
+            elif isinstance(event_data, str):
+                try: data = json.loads(event_data)
+                except: pass
+            elif hasattr(event_data, "payload"):
+                raw = event_data.payload
+                if isinstance(raw, dict): data = raw
+                elif isinstance(raw, str):
+                    try: data = json.loads(raw)
+                    except: pass
+            
+            target_payload = data
+            if "payload" in data and isinstance(data["payload"], dict):
+                target_payload = data["payload"]
+                
+            name = target_payload.get("name")
+            if not name:
+                carb.log_warn(f"[USD Explorer Filters] Invalid FocusPrim payload. Missing 'name'.")
+                return
+
+            carb.log_info(f"[USD Explorer Filters] Focusing on '{name}'")
+            ui_panel.focus_prim(name)
+            
+        except Exception as e:
+            carb.log_error(f"[USD Explorer Filters] Error handling FocusPrim event: {e}")
+
+    def _on_generic_event(self, event_data: Any) -> None:
+        """
+        Catches any event registered in startup.
+        Logs the data and attempts to dispatch it.
+        """
+        carb.log_info(f"[USD Explorer Filters] BRIDGE: Generic event received. Data: {event_data}")
+        
+        # Determine what event name this was (if possible) or just parse the data
+        try:
+            data = {}
+            if isinstance(event_data, dict):
+                data = event_data
+            elif isinstance(event_data, str):
+                try: data = json.loads(event_data)
+                except: data = {"raw": event_data}
+            elif hasattr(event_data, "payload"):
+                raw = event_data.payload
+                if isinstance(raw, dict): data = raw
+                elif isinstance(raw, str):
+                    try: data = json.loads(raw)
+                    except: data = {"raw": raw}
+            
+            # Use previously defined logic if it looks like our protocol
+            ev_type = data.get("event_type")
+            if not ev_type and "payload" in data and isinstance(data["payload"], dict):
+                ev_type = data["payload"].get("event_type")
+                
+            if ev_type == "ToggleFilter":
+                self._on_toggle_filter(event_data)
+            elif ev_type == "FocusPrim":
+                self._on_focus_prim(event_data)
+            else:
+                carb.log_info(f"[USD Explorer Filters] BRIDGE: Unhandled or unknown event type: {ev_type}")
+                
+        except Exception as e:
+            carb.log_error(f"[USD Explorer Filters] Error in generic event handler: {e}")
 
 # Global instance
 _bridge_instance: Optional[StreamBridge] = None

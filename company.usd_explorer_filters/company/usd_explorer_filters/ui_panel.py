@@ -188,17 +188,12 @@ def _set_info_override(info: Optional[csv_bridge.PrimInfo], active: bool) -> Non
             _ACTIVE_INFO_LABEL = None
             panel.set_override(None, None)
 
-def _on_checkbox_changed(label: str, model: ui.SimpleBoolModel) -> None:
+def _apply_filter_logic(label: str, value: bool) -> None:
     """
-    Callback for when a filter checkbox is toggled.
-
-    Args:
-        label: The label of the checkbox (e.g., "Bosch Rexroth").
-        model: The UI model holding the checkbox state.
+    Core logic to apply or remove a filter, independent of the UI model.
     """
-    value = model.get_value_as_bool()
-    carb.log_info(f"[USD Explorer Filters] Filter '{label}' changed to: {value}")
-
+    carb.log_info(f"[USD Explorer Filters] Applying logic for '{label}': {value}")
+    
     # Look up this label in the CSV
     info = csv_bridge.get_prim_info(label)
     if not info:
@@ -232,27 +227,33 @@ def _on_checkbox_changed(label: str, model: ui.SimpleBoolModel) -> None:
         _set_info_override(info, False)
 
 
+def _on_checkbox_changed(label: str, model: ui.SimpleBoolModel) -> None:
+    """
+    Callback for when a filter checkbox is toggled.
+    """
+    value = model.get_value_as_bool()
+    _apply_filter_logic(label, value)
+
+
 def set_filter_state(label: str, active: bool) -> None:
     """
     Programmatically sets the state of a filter.
-    
-    This is used by external modules (like stream_bridge) to toggle filters.
-    Setting the model value will automatically trigger _on_checkbox_changed.
-    
-    Args:
-        label: The label of the filter (e.g., "Bosch Rexroth").
-        active: True to enable, False to disable.
     """
+    carb.log_info(f"[USD Explorer Filters] set_filter_state: {label} -> {active}")
+    
     model = _FILTER_MODELS.get(label)
     if model:
-        # Avoid redundant updates if value is already correct
+        # Update the UI model if it exists (this triggers the checkbox visual)
         if model.get_value_as_bool() != active:
             model.set_value(active)
-    else:
-        carb.log_warn(f"[USD Explorer Filters] Cannot set state for unknown filter: '{label}'")
+            # The callback might or might not trigger depending on context,
+            # so we fall through to apply logic explicitly below.
+
+    # Always apply logic to ensure backend state is correct regardless of UI
+    _apply_filter_logic(label, active)
 
 
-def _focus_prim(label: str) -> None:
+def focus_prim(label: str) -> None:
     """
     Frames the viewport on the prim associated with the given label.
 
@@ -446,7 +447,7 @@ def _checkbox(label: str, default: bool = False) -> ui.SimpleBoolModel:
         "Focus",
         height=0,
         width=60,
-        clicked_fn=lambda l=label: _focus_prim(l),
+        clicked_fn=lambda l=label: focus_prim(l),
         tooltip="Frame the viewport on this prim",
     )
     model.add_value_changed_fn(lambda m: _on_checkbox_changed(label, m))

@@ -32,7 +32,9 @@ class Extension(omni.ext.IExt):
         # Start the stream bridge to listen for WebRTC events
         stream_bridge.startup()
 
-        carb.log_info("[USD Explorer Filters] Extension startup")
+        carb.log_info("!!!" * 20)
+        carb.log_info("[USD Explorer Filters] Extension startup CALLED")
+        carb.log_info("!!!" * 20)
 
         self._window: Optional[ui.Window] = ui.Window(
             "ARENA2036 Shop Floor MAnager",
