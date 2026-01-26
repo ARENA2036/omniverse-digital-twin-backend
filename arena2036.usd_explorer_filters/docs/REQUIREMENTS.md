@@ -1,7 +1,7 @@
 # Requirements Elicitation
 
 ## 1. Introduction
-This document outlines the functional and non-functional requirements for the **USD Explorer Filters** extension (`company.usd_explorer_filters`). The extension is designed to enhance the NVIDIA Omniverse user experience by providing a dedicated interface for filtering and visualizing specific assets within a USD stage.
+This document outlines the functional and non-functional requirements for the **USD Explorer Filters** extension (`arena2036.usd_explorer_filters`). The extension is designed to enhance the NVIDIA Omniverse user experience by providing a dedicated interface for filtering and visualizing specific assets within a USD stage.
 
 ## 2. Functional Requirements
 

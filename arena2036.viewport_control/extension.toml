@@ -1,0 +1,18 @@
+[package]
+version = "0.1.0"
+category = "Simulation"
+title = "Arena2036 Viewport Control"
+description = "Controls the active viewport camera based on commands from the frontend via livestream events."
+authors = ["Arena2036"]
+repository = ""
+keywords = ["viewport", "camera", "control", "livestream"]
+changelog = ""
+readme = "README.md"
+
+[dependencies]
+"omni.kit.livestream.core" = {}
+"omni.kit.viewport.utility" = {}
+"omni.usd" = {}
+
+[[python.module]]
+name = "arena2036.viewport_control"

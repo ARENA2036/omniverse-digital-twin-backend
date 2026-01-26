@@ -153,9 +153,9 @@ def _apply_csv_metadata(info: csv_bridge.PrimInfo) -> None:
 
     # Only write if present in CSV
     if info.contact:
-        prim.SetCustomDataByKey("company:contact", info.contact)
+        prim.SetCustomDataByKey("arena2036:contact", info.contact)
     if info.type:
-        prim.SetCustomDataByKey("company:type", info.type)
+        prim.SetCustomDataByKey("arena2036:type", info.type)
 
 
 def _set_info_override(prim_path: str, active: bool) -> None:

@@ -11,8 +11,8 @@ info_panel_instance: Optional["InfoPanel"] = None
 
 # Keys we’ll read from Prim Custom Data (Metadata)
 CUSTOM_KEYS: Dict[str, str] = {
-    "contact": "company:contact",
-    "type":    "company:type",
+    "contact": "arena2036:contact",
+    "type":    "arena2036:type",
     "area":    "info:area_sqm",
 }
 
@@ -80,8 +80,8 @@ class InfoPanel:
             ui.Spacer(height=8)
             ui.Label(
                 "Add Prim Custom Data in this format:\n"
-                "  company:contact = \"Name, phone\"\n"
-                "  company:type = \"Produktion\" / \"Robotik\"\n"
+                "  arena2036:contact = \"Name, phone\"\n"
+                "  arena2036:type = \"Produktion\" / \"Robotik\"\n"
                 "  info:area_sqm = 1234.5",
                 word_wrap=True,
                 style={"color": 0xFF777777, "font_size": 12},

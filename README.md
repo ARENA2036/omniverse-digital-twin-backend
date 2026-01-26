@@ -1,65 +1,46 @@
-# USD Explorer Filters
+# Omniverse Digital Twin Backend
 
-**Extension Name:** `company.usd_explorer_filters`  
-**Version:** 1.0.0  
-**Category:** UI
+**Repository**: `omniverse-digital-twin-backend`  
+**Focus**: Backend extensions for the ARENA2036 Digital Twin.
 
 ## Overview
 
-The **USD Explorer Filters** extension adds a custom "USD Explorer Filters" panel to the NVIDIA Omniverse UI. It provides a streamlined way to locate, highlight, and inspect specific objects (prims) within a complex USD stage based on pre-defined categories.
+This repository hosts a collection of **NVIDIA Omniverse extensions** that serve as the backend for the ARENA2036 Digital Twin. The core philosophy is to **decouple** the high-fidelity digital twin simulation from the frontend interfaces (web dashboards, mobile apps, kiosks).
 
-This tool is particularly useful for visualizing shop floor sectors, partner classifications, or any other grouped assets in a digital twin environment.
+By exposing control and feedback mechanisms through **interactive event streams**, we create a low-barrier entry point for clients, team members, and events to interact with the Digital Twin without needing deep knowledge of USD or Omniverse.
 
-## Features
+## Architecture
 
-*   **Interactive Filter Panel**: A dedicated UI panel (dockable) with checkboxes for various categories (e.g., "Bosch Rexroth", "Start-up").
-*   **Visual Highlighting**: 
-    *   Automatically applies a highlight material (`/World/Looks/Highlight_Mat`) to selected objects and their entire hierarchy.
-    *   Smartly preserves original material bindings and restores them when the filter is disabled or the extension shuts down.
-*   **Info Panel**: Displays context-specific metadata (Type, Contact info) for the currently active filter/object.
-*   **Data-Driven Configuration**: Filter categories and their corresponding USD paths are defined in a simple CSV file, making it easy to update without changing code.
+The backend operates as a set of modular extensions loaded into Omniverse Kit (e.g., USD Explorer). It communicates with external frontends via **Omniverse Livestreaming** and **Custom Events**.
 
-## Installation & Usage
+- **Frontend**: Sends commands (e.g., "Show Filter X", "Move Camera Here") via WebRTC data channels or WebSocket.
+- **Backend (This Repo)**: Listens for these events and manipulates the USD stage or Viewport in real-time.
 
-1.  **Load the Extension**: Enable `company.usd_explorer_filters` in the Omniverse Extension Manager.
-2.  **Open the Panel**: The "USD Explorer Filters" window will appear automatically on startup (defaulting to the top-right dock).
-3.  **Filter Objects**:
-    *   Navigate to the **Filter** tab.
-    *   Check the boxes (e.g., "Bosch Rexroth") to highlight those objects in the viewport.
-    *   Uncheck to restore original materials.
-4.  **View Info**:
-    *   Switch to the **Info** tab to see details about the highlighted object.
+## Extensions
 
-## Configuration
+### 1. `arena2036.usd_explorer_filters`
+**Purpose**: Interactive filtering and highlighting of USD stage elements.
+- **Function**: Listens for toggle commands to highlight specific partner sectors or asset groups (e.g., "Bosch Rexroth").
+- **Features**: 
+  - Dynamic material highlighting.
+  - CSV-backed metadata mapping.
+  - UI Panel for manual control.
 
-The extension uses a CSV file to map UI labels to USD prim paths.
+### 2. `arena2036.viewport_control`
+**Purpose**: Remote camera control for guided tours or interactive navigation.
+- **Function**: Listens for navigation commands (`move_forward`, `rotate_left`, `zoom_in`).
+- **Features**:
+  - Smooth camera movement.
+  - Livestream event integration (`CameraControl` event).
 
-**File Location:** `company/usd_explorer_filters/prim_info.csv`
+## Getting Started
 
-**Format:**
-```csv
-name,path,type,contact
-Bosch Rexroth,/World/ShopFloor/BoschRexroth,Partner,info@bosch.com
-```
+1.  **Clone this repository** to your local machine.
+2.  **Add to Omniverse**: In the Omniverse Extension Manager, add the path to this repository's root or specific extension folders.
+3.  **Enable Extensions**: Toggle on `arena2036.usd_explorer_filters` and `arena2036.viewport_control`.
+4.  **Connect Client**: Start a Livestream session and connect your web frontend to send commands.
 
-*   **name**: The label displayed in the UI.
-*   **path**: The absolute USD path to the root prim of the object/group.
-*   **type**: Metadata displayed in the Info panel.
-*   **contact**: Metadata displayed in the Info panel.
+## Contribution
 
-## Dependencies
-
-This extension requires the following Omniverse Kit extensions (defined in `extension.toml`):
-*   `omni.kit.uiapp`
-*   `omni.usd`
-*   `omni.ui`
-
-## File Structure
-
-*   **`extension.toml`**: Extension configuration and dependencies.
-*   **`company/usd_explorer_filters/`**: Source code.
-    *   `__init__.py`: Entry point and main window setup.
-    *   `ui_panel.py`: Core logic for the filter UI and material highlighting.
-    *   `tab_widgets.py`: Custom tab UI components.
-    *   `csv_bridge.py`: Handles loading data from `prim_info.csv`.
-    *   `info_panel.py`: Displays metadata.
+- **New Extensions**: Create a new folder `arena2036.new_extension` and follow the standard extension structure.
+- **Namespace**: All extensions use the `arena2036` namespace.

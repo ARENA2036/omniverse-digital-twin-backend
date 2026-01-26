@@ -16,13 +16,23 @@ class StreamBridge:
     """
     
     def __init__(self):
-        self._livestream = omni.kit.livestream.core.get_livestream()
+        self._livestream = None
         self._event_subscription = None
         
     def startup(self) -> None:
         """
         Initializes the bridge and subscribes to livestream events.
         """
+        try:
+            if hasattr(omni.kit.livestream.core, "get_livestream"):
+                self._livestream = omni.kit.livestream.core.get_livestream()
+            else:
+                carb.log_warn("[USD Explorer Filters] 'get_livestream' not found in omni.kit.livestream.core.")
+                self._livestream = None
+        except Exception as e:
+            carb.log_error(f"[USD Explorer Filters] Error accessing livestream interface: {e}")
+            self._livestream = None
+
         if not self._livestream:
             carb.log_warn("[USD Explorer Filters] Livestream extension not available.")
             return
