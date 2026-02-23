@@ -1,0 +1,4 @@
+Name,Unit,MQTT ID,Prim Path,Min Value,Max Value,Min Color,Max Color
+Damper Position,%,milesight/bacnet/AR2036_020001_R0200_430_DEMO01°01_FLP01_CRA_xxxxx_xxxxx_CS01/DamperPosition,/World/Sensors/SEN_LDA_Damper,0,100,"0, 0, 255","255, 0, 0"
+Air Volume,m3/h,AR2036_020001_R0200_430_DEMO01°01_FAN01_CRA_xxxxx_xxxxx_V01,/World/Sensors/SEN_LDA_Volume,0,1000,"0, 0, 255","255, 0, 0"
+Air Pressure,Pa,AR2036_020001_R0200_430_DEMO01°01_FAN01_CRA_xxxxx_xxxxx_PRD01,/World/Sensors/SEN_LDA_Dif,0,500,"0, 0, 255","255, 0, 0"

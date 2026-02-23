@@ -1,0 +1,110 @@
+Logger Started
+Update Loop started at 2026-02-02 15:23:28.998857
+MQTT Client created
+MQTT Client created and connected to mqtt.collectu.de:8883
+{"path": "Arena2036/spie", "event": {"eventId": "d60b7sk86qrs73fdm7gg", "targetName": "projects/c871fpu53hhdjn6t0fl0/devices/c2ustekc0000hr2ivn0g", "eventType": "cellularStatus", "data": {"cellularStatus": {"signalStrength": 30, "errors": [], "updateTime": "2026-02-02T14:25:54.332884Z"}}, "timestamp": "2026-02-02T14:25:54.332884Z"}, "labels": {"name": "0.200 Halle Mitte"}, "metadata": {"deviceId": "c2ustekc0000hr2ivn0g", "projectId": "c871fpu53hhdjn6t0fl0", "deviceType": "ccon", "productNumber": "101505"}}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09250021"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.0931251"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09375"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.0943749"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09499979"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09562492"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09625006"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09687519"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09750009"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09687519"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09750009"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09687519"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09625006"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09687519"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09562492"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09499979"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.0943749"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.0931251"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09250021"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09187508"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09124994"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09062481"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08999991"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08937502"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08999991"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08937502"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08999991"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08937502"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08999991"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08937502"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08999991"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09062481"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09124994"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09187508"}
+{"pointId": "AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_PRD01", "value": 143}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09250021"}
+{"pointId": "test3", "value": 33977381.943}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.0931251"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09375"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.0931251"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09375"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.0931251"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09375"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.0943749"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09562492"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09625006"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09687519"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09750009"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09812498"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09750009"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09812498"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09874988"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09812498"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09750009"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09687519"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09562492"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09499979"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.0943749"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09375"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.0931251"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09250021"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09187508"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09124994"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.09062481"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08999991"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08937502"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08875012"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08749986"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08624983"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08562493"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08500004"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08437514"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08500004"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08437514"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08375025"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08312488"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08249998"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08187485"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08124995"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08062506"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.08000016"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.0787499"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.078125"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07749987"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07687497"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07625008"}
+{"pointId": "test3", "value": 33977391.944}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07687497"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07625008"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07687497"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07749987"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07687497"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07625008"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07562518"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07437491"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07375002"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07312489"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.07249999"}
+{"milesight/io/AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_VEL01/Value": "1.0718751"}
+Update Loop started at 2026-02-02 15:24:06.123784
+MQTT Client created
+MQTT Client created and connected to mqtt.collectu.de:8883
+Update Loop started at 2026-02-02 15:24:09.217721
+MQTT Client created
+MQTT Client created and connected to mqtt.collectu.de:8883

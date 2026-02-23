@@ -1,0 +1,19 @@
+[package]
+version = "1.0.0"
+category = "UI"
+title = "USD Explorer Filters"
+description = "Interactive filtering and highlighting of USD stage elements."
+authors = ["Arena2036"]
+repository = ""
+keywords = ["usd", "filter", "highlight", "digital-twin"]
+changelog = ""
+readme = "README.md"
+
+[dependencies]
+"omni.kit.uiapp" = {}
+"omni.usd" = {}
+"omni.ui" = {}
+"omni.kit.livestream.core" = {}
+
+[[python.module]]
+name = "arena2036.usd_explorer_filters"

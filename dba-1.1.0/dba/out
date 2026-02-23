@@ -1,0 +1,17 @@
+Received Data from the MQTT Server:
+{"pointId": "test3", "value": 12801928.706}
+{"path": "Arena2036/spie", "event": {"eventId": "c7t81gq3j9mr9jev3cbg119686", "targetName": "projects/c871fpu53hhdjn6t0fl0/devices/c17heop27gm0008e2bc0", "eventType": "temperature", "data": {"temperature": {"value": 22.15, "updateTime": "2025-06-02T12:20:59.539000Z", "samples": [{"value": 22.15, "sampleTime": "2025-06-02T12:20:59.539000Z"}], "isBackfilled": false}}, "timestamp": "2025-06-02T12:20:59.539000Z"}, "labels": {"name": "0.200 Halle Spange 8B Rohrleitung Container"}, "metadata": {"deviceId": "c17heop27gm0008e2bc0", "projectId": "c871fpu53hhdjn6t0fl0", "deviceType": "temperature", "productNumber": "102058"}}
+{"pointId": "test3", "value": 12801928.706}
+{"pointId": "test3", "value": 12801938.717}
+{"pointId": "test3", "value": 12801948.726}
+{"0.pointId": "AR2036_020001_R0200_430_DEMO01\u00b001_FAN01_CRA_xxxxx_xxxxx_PRD01", "0.value": 38, "1.pointId": "AR2036_020001_R0200_430_DEMO01\u00b001_FAN01_CRA_xxxxx_xxxxx_V01", "1.value": 468.16}
+connection found
+connection found
+{"pointId": "test3", "value": 12801958.727}
+{"pointId": "test3", "value": 12801968.728}
+{"pointId": "AR2036_020001_R0200_430_DEMO01\u00b001_FI01_CRA_xxxxx_xxxxx_PRD01", "value": 34}
+connection found
+{"pointId": "test3", "value": 12801978.728}
+{"pointId": "test3", "value": 12801988.728}
+{"pointId": "test3", "value": 12801998.736}
+{"pointId": "test3", "value": 12802008.745}

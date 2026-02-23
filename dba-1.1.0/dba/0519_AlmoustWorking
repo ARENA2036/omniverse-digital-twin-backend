@@ -1,0 +1,132 @@
+import omni.ext
+import omni.ui as ui
+from pxr import Usd, UsdGeom, Gf
+import omni.usd
+import paho.mqtt.client as mqtt
+import json
+import carb.events
+import json
+import os
+from omni.kit.app import get_app
+import pathlib
+from threading import Thread
+import time
+import datetime
+import ssl
+
+# Configuration
+MQTT_BROKER_HOST = 'mqtt.collectu.de'
+MQTT_BROKER_PORT = 8883 
+MQTT_USERNAME = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjhlN2NiZDczNzNkZmJiMzhkMTUzYzZmNjJmZTVlZWJmNGUzZjQ3NDgwYjJiYzY2MzIwOGZhOTI1ZDljMDg4OTMiLCJ0eXAiOiJKV1QifQ.eyJ1c2VyX2lkIjoiZjU2NTFjMDEtMTNmNS00OWMzLTgyYzItYjkyNjQ4ZjUwZjA3IiwidG9rZW5faWQiOiI2ODRlMTI0OS1lM2U4LTQ0MTQtODRiNy05ZmUzMDJiNTNkZTYiLCJpc3MiOiJDb2xsZWN0dSBBUEkiLCJqdGkiOiI1Y2ZiNzAwMy1iZDNiLTRjMTQtYmExNi02ZGRmN2NkZTM0NWIiLCJpYXQiOjE3NDcwNjM0MjMsIm5iZiI6MTc0NzA2MzQyM30.q_RYnCCUfpfMAt9r6_DiOSlbHphE04_K8S8gvOcffV7EbzPdapLApM8BW_I2ydU5crdHSimHSIHqHkey3l9H8cKcXRr9xTv56vQt5JUHcKyIDWwU50RVuNoMcJTqdSN-PcQWppQECHwDvrFCsAAZ9UpnuCxCg1xZU2VhJlOA3i4LbLBlW76pIkvpnIiXVnlm68PM8N2eAJpfDkdZxDZe-mM1srd_8I1DXn8UmKd4guJB6-J60pXXWf3Pv-4Y9Dp-4RV-6KWXlUBPym2G18UH39nGyJrv4o4GeMQVvFnnJHWhSmRWtzMZSLuCjPYH5c2YTXQ8n_LI3yNFppG8-ZaVQQ'
+MQTT_PASSWORD = '0'
+MQTT_TOPIC = 'Arena2036/omniverse/spie/demonstrator'
+
+error_styles = { "color": "red", "font_size": 20.0 }
+
+# Any class derived from `omni.ext.IExt` in top level module (defined in `python.modules` of `extension.toml`) will be
+# instantiated when extension gets enabled and `on_startup(ext_id)` will be called. Later when extension gets disabled
+# on_shutdown() is called.
+class DbaExtension(omni.ext.IExt):
+    # ext_id is current extension id. It can be used with extension manager to query additional information, like where
+    # this extension is located on filesystem.
+    def on_startup(self, ext_id):
+        print("[dba] dba startup")
+
+        self._count = 0
+        self.connection = False	
+
+        self._window = ui.Window("Digitales Bauen", width=300, height=300)
+        with self._window.frame:
+            with ui.VStack():
+                label = ui.Label("")
+
+                def on_click():
+                    self.create_mqtt_client()
+                    self.connection = True
+                    label.text = "connected"
+
+                def on_reset():
+                    if self.connection == True:
+                        self.client.disconnect()
+                        self.client.loop_stop()
+                        label.text = "disconnected"
+                    label.text = "reconnected"
+                
+                def on_update():
+                    label.text = (f"Received the following message: {self.client.user_data_get()}")
+
+                on_reset()
+
+                with ui.HStack():
+                    ui.Button("Connect", clicked_fn=on_click)
+                    ui.Button("Update", clicked_fn=on_update)
+                    ui.Button("Reset", clicked_fn=on_reset)
+
+
+    def on_shutdown(self):
+        print("[dba] dba shutdown")
+    
+    def parse_json_string(self, input_str):
+        try:
+            # Safely evaluate the input string to a Python dict
+            data = json.loads(input_str)
+            return data
+        except json.JSONDecodeError as e:
+            print("Invalid JSON string:", e)
+            return None
+        
+    # Callback when connected
+    def on_connect(client, userdata, flags, rc):
+        if rc == 0:
+            print("Connected successfully.")
+            client.subscribe(MQTT_TOPIC)
+        else:
+            print(f"Connection failed with code {rc}")
+
+    # Callback when a message is received
+    def on_message(self, client, userdata, msg):
+
+        message_str = msg.payload.decode("utf-8")
+        try:
+            data = json.loads(message_str)
+            prim_path = data.get("prim")
+            self.tasks[prim_path] = {k.lower(): v for k, v in data.items()}
+            timestamps = self._cycle_time.get(prim_path, [])
+            timestamps.append(datetime.datetime.now())
+            while len(timestamps) >= 10:
+                timestamps.pop(0)
+            self._cycle_time[prim_path] = timestamps
+        except Exception as e:
+            self.update_status(f"Failed to json load message:\n{e}")
+
+
+        userdata.append(msg.payload)
+        if len(userdata) >= 10:
+            client.unsubscribe(MQTT_TOPIC)
+
+
+    def create_mqtt_client(self):
+        # Create MQTT client and set callbacks
+        self.client = mqtt.Client()
+        self.client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+            
+        # Enable TLS
+        self.client.tls_set(
+            cert_reqs=ssl.CERT_REQUIRED,
+            tls_version=ssl.PROTOCOL_TLS_CLIENT
+        )
+
+        self.client.tls_insecure_set(False)  # Set to True if using self-signed certs
+
+        # Assign callbacks
+        self.client.on_connect = self.on_connect
+        self.client.on_message = self.on_message
+
+        # Connect to the broker
+        self.client.user_data_set([])
+        self.client.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT)
+
+        # Start the loop to process network traffic and dispatch callbacks
+        #self.client.loop_forever()
+        
+        self.client.loop_start()
