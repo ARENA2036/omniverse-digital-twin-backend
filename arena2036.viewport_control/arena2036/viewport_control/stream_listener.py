@@ -1,48 +1,44 @@
 import carb
+import carb.events
+from carb.eventdispatcher import get_eventdispatcher
 import json
+import omni.kit.app
 from typing import Any, Optional
-
-# Safely import livestream core; may be unavailable in some Kit versions
-try:
-    import omni.kit.livestream.core as _livestream_core
-except Exception:
-    _livestream_core = None
 
 class StreamListener:
     """
     Listens for 'CameraControl' events from the livestream and invokes the CameraController.
     """
     def __init__(self, controller):
-        # Attempt to retrieve livestream instance safely
-        if _livestream_core and hasattr(_livestream_core, "get_livestream"):
-            try:
-                self._livestream = _livestream_core.get_livestream()
-            except Exception as e:
-                carb.log_warn(f"[arena2036.viewport_control] Failed to obtain livestream: {e}")
-                self._livestream = None
-        else:
-            carb.log_warn("[arena2036.viewport_control] omni.kit.livestream.core not available or missing get_livestream")
-            self._livestream = None
-
         self._controller = controller
         self._event_subscription = None
 
     def startup(self):
-        if not self._livestream:
-            carb.log_warn("[arena2036.viewport_control] Livestream extension not available or interface not found.")
-            return
-            
         carb.log_info("[arena2036.viewport_control] StreamListener starting...")
-        self._event_subscription = self._livestream.register_event_handler(
-            "CameraControl",
-            self._on_camera_control_event
+        
+        event_type = "CameraControl"
+        
+        # Register the alias so the bridging layer knows to forward it
+        omni.kit.app.register_event_alias(
+            carb.events.type_from_string(event_type),
+            event_type,
+        )
+        
+        # Subscribe to the event
+        ed = get_eventdispatcher()
+        self._event_subscription = ed.observe_event(
+            observer_name=f"ViewportControl:{event_type}",
+            event_name=event_type,
+            on_event=self._on_camera_control_event,
         )
 
     def shutdown(self):
-        if self._event_subscription and self._livestream:
-            self._livestream.unregister_event_handler(self._event_subscription)
+        if self._event_subscription:
+            ed = get_eventdispatcher()
+            # In some versions, observe_event returns a subscription object that we must keep alive.
+            # When the object is garbage collected, it unsubscribes. Or we can clear it.
             self._event_subscription = None
-        self._livestream = None
+        carb.log_info("[arena2036.viewport_control] StreamListener shut down.")
 
     def _on_camera_control_event(self, event_data: Any):
         """
@@ -53,8 +49,9 @@ class StreamListener:
             "value": 1.0 (optional)
         }
         """
+        carb.log_info(f"[arena2036.viewport_control] Received 'CameraControl' event. Raw data: {event_data}")
         try:
-            # Normalize data similar to stream_bridge pattern
+            # Normalize data similar to stream_bridge pattern in usd_explorer_filters
             data = {}
             if isinstance(event_data, dict):
                 data = event_data
@@ -66,7 +63,9 @@ class StreamListener:
                     return
             elif hasattr(event_data, "payload"):
                 raw = event_data.payload
-                if isinstance(raw, dict):
+                if hasattr(raw, "get_dict"):
+                    data = raw.get_dict()
+                elif isinstance(raw, dict):
                     data = raw
                 elif isinstance(raw, str):
                     try:

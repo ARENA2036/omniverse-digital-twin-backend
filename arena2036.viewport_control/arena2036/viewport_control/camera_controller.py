@@ -9,21 +9,26 @@ class CameraController:
     Controls the active viewport camera.
     """
     def __init__(self):
-        self.translation_speed = 100.0
+        self.translation_speed = 1.0
         self.rotation_speed = 5.0
 
     def _get_active_camera_prim(self):
         # Use the utility helper which abstracts away API differences
         camera_path = omni.kit.viewport.utility.get_active_viewport_camera_path()
+        carb.log_info(f"[Viewport Control] _get_active_camera_prim camera_path: {camera_path}")
         if not camera_path:
             carb.log_warn("[Viewport Control] Could not determine active viewport camera path.")
             return None
         
         stage = omni.usd.get_context().get_stage()
         if not stage:
+            carb.log_warn("[Viewport Control] get_stage returned None.")
             return None
 
-        return stage.GetPrimAtPath(camera_path)
+        prim = stage.GetPrimAtPath(camera_path)
+        if not prim:
+            carb.log_warn(f"[Viewport Control] GetPrimAtPath returned None for path: {camera_path}")
+        return prim
 
     def move_forward(self, speed: float = None):
         self._move_local(Gf.Vec3d(0, 0, -1), speed)

@@ -1,11 +1,9 @@
 import carb
+import carb.events
+from carb.eventdispatcher import get_eventdispatcher
 import json
+import omni.kit.app
 from typing import Dict, Any, Optional
-# Safely import livestream core; may be unavailable in some Kit versions
-try:
-    import omni.kit.livestream.core as _livestream_core
-except Exception:
-    _livestream_core = None
 
 from . import ui_panel
 
@@ -20,44 +18,38 @@ class StreamBridge:
     """
     
     def __init__(self):
-        # Attempt to retrieve livestream instance safely
-        if _livestream_core and hasattr(_livestream_core, "get_livestream"):
-            try:
-                self._livestream = _livestream_core.get_livestream()
-            except Exception as e:
-                carb.log_warn(f"[USD Explorer Filters] Failed to obtain livestream: {e}")
-                self._livestream = None
-        else:
-            carb.log_warn("[USD Explorer Filters] omni.kit.livestream.core not available or missing get_livestream")
-            self._livestream = None
-        self._event_subscription = None
+        self._subscriptions = []
         
     def startup(self) -> None:
         """
         Initializes the bridge and subscribes to livestream events.
         """
-        if not self._livestream:
-            carb.log_warn("[USD Explorer Filters] Livestream extension not available.")
-            return
-
         carb.log_info("[USD Explorer Filters] Starting StreamBridge...")
         
-        # Subscribe to the generic message event
-        # Note: The actual API might vary slightly depending on the Kit version.
-        # We assume a standard message event structure here.
-        self._event_subscription = self._livestream.register_event_handler(
-            "ToggleFilter", 
-            self._on_toggle_filter
-        )
+        incoming = {
+            'ToggleFilter': self._on_toggle_filter,
+            'FocusPrim': self._on_focus_prim,
+        }
+        
+        ed = get_eventdispatcher()
+        for event_type, handler in incoming.items():
+            omni.kit.app.register_event_alias(
+                carb.events.type_from_string(event_type),
+                event_type,
+            )
+            self._subscriptions.append(
+                ed.observe_event(
+                    observer_name=f"USDExplorerFilters:{event_type}",
+                    event_name=event_type,
+                    on_event=handler,
+                )
+            )
 
     def shutdown(self) -> None:
         """
         Cleans up subscriptions.
         """
-        if self._event_subscription:
-            self._livestream.unregister_event_handler(self._event_subscription)
-            self._event_subscription = None
-        self._livestream = None
+        self._subscriptions.clear()
 
     def _on_toggle_filter(self, event_data: Any) -> None:
         """
@@ -94,7 +86,9 @@ class StreamBridge:
                 # Handle carb.events.IEvent or similar objects
                 # If it's an IEvent, the data might be in .payload
                 raw_payload = event_data.payload
-                if isinstance(raw_payload, dict):
+                if hasattr(raw_payload, "get_dict"):
+                    data = raw_payload.get_dict()
+                elif isinstance(raw_payload, dict):
                     data = raw_payload
                 elif isinstance(raw_payload, str):
                      try:
@@ -126,6 +120,49 @@ class StreamBridge:
             
         except Exception as e:
             carb.log_error(f"[USD Explorer Filters] Error handling ToggleFilter event: {e}")
+
+    def _on_focus_prim(self, event_data: Any) -> None:
+        """
+        Callback for 'FocusPrim' events from the client.
+        """
+        carb.log_info(f"[USD Explorer Filters] Received 'FocusPrim' event. Raw data: {event_data}")
+
+        try:
+            data = {}
+            if isinstance(event_data, dict):
+                data = event_data
+            elif isinstance(event_data, str):
+                try:
+                    data = json.loads(event_data)
+                except json.JSONDecodeError:
+                    return
+            elif hasattr(event_data, "payload"):
+                raw_payload = event_data.payload
+                if hasattr(raw_payload, "get_dict"):
+                    data = raw_payload.get_dict()
+                elif isinstance(raw_payload, dict):
+                    data = raw_payload
+                elif isinstance(raw_payload, str):
+                     try:
+                        data = json.loads(raw_payload)
+                     except json.JSONDecodeError:
+                        pass
+
+            target_payload = data
+            if "payload" in data and isinstance(data["payload"], dict):
+                target_payload = data["payload"]
+            
+            name = target_payload.get("name")
+            if not name:
+                carb.log_warn(f"[USD Explorer Filters] Invalid FocusPrim payload structure. Processed data: {target_payload}")
+                return
+                
+            carb.log_info(f"[USD Explorer Filters] Focusing prim for: '{name}'")
+            
+            ui_panel._focus_prim(name)
+            
+        except Exception as e:
+            carb.log_error(f"[USD Explorer Filters] Error handling FocusPrim event: {e}")
 
 # Global instance
 _bridge_instance: Optional[StreamBridge] = None
