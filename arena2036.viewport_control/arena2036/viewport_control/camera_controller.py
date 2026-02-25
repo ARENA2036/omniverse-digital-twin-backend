@@ -42,6 +42,12 @@ class CameraController:
     def move_right(self, speed: float = None):
         self._move_local(Gf.Vec3d(1, 0, 0), speed)
         
+    def move_up(self, speed: float = None):
+        self._move_local(Gf.Vec3d(0, 1, 0), speed)
+
+    def move_down(self, speed: float = None):
+        self._move_local(Gf.Vec3d(0, -1, 0), speed)
+        
     def zoom_in(self, speed: float = None):
         self.move_forward(speed)
 
