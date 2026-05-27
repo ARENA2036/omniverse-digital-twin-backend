@@ -6,5 +6,4 @@ VW Golf 8 GTE,/World/Boardnetz_Demo_VW_Golf_8_GTE,Use Case,Automobil,"Founder, +
 VW ID7,/World/SM_Bordnetz_VW_ID7,Use Case,Automobil,"Engineer, +49 333 555"
 KochPak Cell,/World/A36_SHF_Manager_2508120959,Use Case,Produktion,"Founder, +49 555 888"
 Kuka Unitree Instance,"/World/kr360_R2830_with_gripper; /World/Unitree_G1",Use Case,Robotik,"Engineer, +49 444 666"
-
 CollectU Asset Tower,/World/SM_Collectu_Demonstrator_gesamt,Use Case,AssetConnectivity,"Manager, +49 555 888"
